@@ -9,12 +9,12 @@ namespace BroadcastChatServer.Server
     public class BroadcastChatServer
     {
         public Dictionary<string, BroadcastChatChannel> Channels { get; private set; }
-        public List<BroadcastChatClient> Clients { get; private set; }
+        public Dictionary<string, BroadcastChatClient> Clients { get; private set; }
 
         public BroadcastChatServer()
         {
             Channels = new Dictionary<string, BroadcastChatChannel>();
-            Clients = new List<BroadcastChatClient>();
+            Clients = new Dictionary<string, BroadcastChatClient>();
         }
 
         public void Start(int port)

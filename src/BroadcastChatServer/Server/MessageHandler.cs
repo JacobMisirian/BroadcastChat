@@ -26,22 +26,31 @@ namespace BroadcastChatServer.Server
                     else
                         handleChanMsg(client, parts[1], sliceArray(parts, 2, parts.Length));
                     break;
+                case "PRIVMSG":
+                    if (parts.Length < 3)
+                        client.SendErrorArgLength(parts[0].ToUpper(), 3, parts.Length);
+                    else
+                        handlePrivMsg(client, parts[1], sliceArray(parts, 2, parts.Length));
+                    break;
             }
         }
 
         private void handleChanMsg(BroadcastChatClient client, string channel, string message)
         {
             if (!server.Channels.ContainsKey(channel))
-            {
                 client.SendErrorNoChannel(channel);
-                return;
-            }
-            if (!client.Channels.Contains(channel))
-            {
+            else if (!client.Channels.Contains(channel))
                 client.SendErrorNotInChannel(channel);
-                return;
-            }
-            server.Channels[channel].SendChanMsg(client, message);
+            else
+                server.Channels[channel].SendChanMsg(client, message);
+        }
+
+        private void handlePrivMsg(BroadcastChatClient client, string receiver, string message)
+        {
+            if (!server.Clients.ContainsKey(receiver))
+                client.SendErrorNoNick(receiver);
+            else
+                server.Clients[receiver].SendPrivMsg(client.Nick, message);
         }
 
         private string sliceArray(string[] arr, int start, int end)

@@ -80,6 +80,10 @@ namespace BroadcastChatServer.Networking
         {
             SendError("No such channel {0}", channel);
         }
+        public void SendErrorNoNick(string nick)
+        {
+            SendError("No such nick {0}", nick);
+        }
         public void SendErrorNotInChannel(string channel)
         {
             SendError("Not in channel {0}", channel);
