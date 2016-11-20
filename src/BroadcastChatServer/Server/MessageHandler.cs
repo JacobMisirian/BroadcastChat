@@ -19,7 +19,7 @@ namespace BroadcastChatServer.Server
             string[] parts = msg.Split(' ');
 
             // We can't have clients doing anything until we know who they are.
-            if (client.Nick == null && parts[0] != "NICK")
+            if (client.Nick == null && parts[0].ToUpper() != "NICK")
             {
                 client.SendErrorNickNotSet();
                 return;
@@ -112,11 +112,21 @@ namespace BroadcastChatServer.Server
             else if (!server.Channels[channel].Clients.ContainsKey(client.Nick))
                 client.SendErrorNotInChannel(channel);
             else if (!server.Channels[channel].OperClients.ContainsKey(client.Nick))
-                client.SendErrorNotChanOper(channel);
+                client.SendErrorNotChanOper(channel, client.Nick);
             else if (mod.ToUpper() == "GIVE")
-                server.Channels[channel].SendChanOperGive(client, target);
+            {
+                if (server.Channels[channel].OperClients.ContainsKey(target))
+                    client.SendErrorAlreadyChanOper(channel, target);
+                else
+                    server.Channels[channel].SendChanOperGive(client, target);
+            }
             else if (mod.ToUpper() == "TAKE")
-                server.Channels[channel].SendChanOperTake(client, target);
+            {
+                if (!server.Channels[channel].OperClients.ContainsKey(target))
+                    client.SendErrorNotChanOper(channel, target);
+                else
+                    server.Channels[channel].SendChanOperTake(client, target);
+            }
             else
                 client.SendErrorExpected(mod.ToUpper(), "GIVE", "TAKE");
         }
@@ -155,7 +165,17 @@ namespace BroadcastChatServer.Server
             if (server.Clients.ContainsKey(newNick))
                 client.SendErrorNickExists(newNick);
             else
+            {
+                if (client.Nick == null)
+                    server.Clients.Add(newNick, client);
+                else
+                {
+                    var temp = server.Clients[client.Nick];
+                    server.Clients.Remove(client.Nick);
+                    server.Clients.Add(newNick, client);
+                }
                 client.ChangeNick(newNick);
+            }
         }
         private void handlePrivMsg(BroadcastChatClient client, string receiver, string message)
         {
@@ -175,7 +195,7 @@ namespace BroadcastChatServer.Server
             else if (!server.Channels[channel].Clients.ContainsKey(client.Nick))
                 client.SendErrorNotInChannel(channel);
             else if (!server.Channels[channel].OperClients.ContainsKey(client.Nick))
-                client.SendErrorNotChanOper(channel);
+                client.SendErrorNotChanOper(channel, client.Nick);
             else
                 server.Channels[channel].SendTopic(client, newTopic);
         }

@@ -113,6 +113,10 @@ namespace BroadcastChatServer.Networking
         {
             Send("ERROR {0}", string.Format(msg, args));
         }
+        public void SendErrorAlreadyChanOper(string channel, string user)
+        {
+            SendError("User {0} is already chan oper in {1}", user, channel);
+        }
         public void SendErrorArgLength(string baseCmd, int expected, int given)
         {
             SendError("Command {0} expects {1} argument(s), given: {2}", baseCmd, expected, given);
@@ -145,9 +149,9 @@ namespace BroadcastChatServer.Networking
         {
             SendError("No such nick {0}", nick);
         }
-        public void SendErrorNotChanOper(string channel)
+        public void SendErrorNotChanOper(string channel, string user)
         {
-            SendError("Not oper in channel {0}", channel);
+            SendError("User {0} is not chan oper in channel {1}", user, channel);
         }
         public void SendErrorNotInChannel(string channel)
         {

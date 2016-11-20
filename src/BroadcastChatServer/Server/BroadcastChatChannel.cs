@@ -28,6 +28,18 @@ namespace BroadcastChatServer.Server
             foreach (var client in Clients.Values)
                 client.SendChanMsg(Name, sender, message);
         }
+        public void SendChanOperGive(BroadcastChatClient cl, string target)
+        {
+            foreach (var client in Clients.Values)
+                client.SendChanOperGive(Name, cl.Nick, target);
+            OperClients.Add(target, Clients[target]);
+        }
+        public void SendChanOperTake(BroadcastChatClient cl, string target)
+        {
+            foreach (var client in Clients.Values)
+                client.SendChanOperTake(Name, cl.Nick, target);
+            OperClients.Remove(target);
+        }
         public void SendJoin(BroadcastChatClient cl)
         {
             if (Clients.Count == 0)
@@ -51,20 +63,15 @@ namespace BroadcastChatServer.Server
             Clients.Remove(oldNick);
             Clients.Add(newNick, temp);
 
+            if (OperClients.ContainsKey(oldNick))
+            {
+                temp = OperClients[oldNick];
+                OperClients.Remove(oldNick);
+                OperClients.Add(newNick, temp);
+            }
+
             foreach (var client in Clients.Values)
                 client.SendNickChange(Name, oldNick, newNick);
-        }
-        public void SendChanOperGive(BroadcastChatClient cl, string target)
-        {
-            foreach (var client in Clients.Values)
-                client.SendChanOperGive(Name, cl.Nick, target);
-            OperClients.Add(target, Clients[target]);
-        }
-        public void SendChanOperTake(BroadcastChatClient cl, string target)
-        {
-            foreach (var client in Clients.Values)
-                client.SendChanOperTake(Name, cl.Nick, target);
-            OperClients.Remove(target);
         }
         public void SendTopic(BroadcastChatClient cl, string newTopic)
         {
