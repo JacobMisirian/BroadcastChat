@@ -21,9 +21,9 @@ namespace BroadcastChatServer.Networking
         public Thread ListenThread { get; set; }
         public Thread PingThread { get; set; }
 
-        public List<string> Channels { get; private set; }
+        public Dictionary<string, BroadcastChatChannel> Channels { get; private set; }
 
-        public string Nick { get; set; }
+        public string Nick { get; private set; }
 
         public BroadcastChatClient(TcpClient client)
         {
@@ -34,7 +34,23 @@ namespace BroadcastChatServer.Networking
 
             Ping = 0;
 
-            Channels = new List<string>();
+            Channels = new Dictionary<string, BroadcastChatChannel>();
+        }
+
+        public void ChangeNick(string newNick)
+        {
+            foreach (var channel in Channels.Values)
+                channel.SendNickChange(Nick, newNick);
+            Nick = newNick;
+        }
+        public void Quit(string reason)
+        {
+            foreach (var channel in Channels.Values)
+                channel.SendQuit(this, reason);
+
+            ListenThread.Abort();
+            PingThread.Abort();
+            TcpClient.Close();
         }
 
         public void Send(string msg, params object[] args)
@@ -43,21 +59,21 @@ namespace BroadcastChatServer.Networking
             StreamWriter.Flush();
         }
 
-        public void SendChanJoin(string channel, string nick)
-        {
-            Send("CHANJOIN {0} {1}", channel, nick);
-        }
-        public void SendChanLeave(string channel, string nick)
-        {
-            Send("CHANLEAVE {0} {1}", channel, nick);
-        }
         public void SendChanMsg(string channel, string sender, string message)
         {
             Send("CHANMSG {0} {1} {2}", channel, sender, message);
+        }       
+        public void SendJoin(string channel, string nick)
+        {
+            Send("JOIN {0} {1}", channel, nick);
+        }
+        public void SendLeave(string channel, string nick, string reason)
+        {
+            Send("LEAVE {0} {1} {2}", channel, nick, reason);
         }
         public void SendNickChange(string channel, string oldNick, string newNick)
         {
-            Send("NICKCHANGE {0} {1} {2}", channel, oldNick, newNick);
+            Send("NICK {0} {1} {2}", channel, oldNick, newNick);
         }
         public void SendPrivMsg(string sender, string message)
         {
@@ -75,6 +91,18 @@ namespace BroadcastChatServer.Networking
         public void SendErrorArgLength(string baseCmd, int expected, int given)
         {
             SendError("Command {0} expects {1} argument(s), given: {2}", baseCmd, expected, given);
+        }
+        public void SendErrorChannelName(string channel)
+        {
+            SendError("Channel names must start with #, got {0}", channel);
+        }
+        public void SendErrorInChannel(string channel)
+        {
+            SendError("Already in channel {0}", channel);
+        }
+        public void SendErrorNickExists(string nick)
+        {
+            SendError("Nick already exists {0}", nick);
         }
         public void SendErrorNoChannel(string channel)
         {

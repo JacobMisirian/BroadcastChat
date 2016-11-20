@@ -6,7 +6,7 @@ namespace BroadcastChatServer.Events
 {
     public class ClientDisconnectedEventArgs: EventArgs
     {
-        public BroadcastChatClient Client { get; private set; }
+        public BroadcastChatClient Client { get; set; }
 
         public ClientDisconnectedEventArgs(BroadcastChatClient client)
         {

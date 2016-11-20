@@ -77,13 +77,7 @@ namespace BroadcastChatServer.Networking
                 while (true)
                 {
                     client.Send("PING");
-                    for (int i = 0; i <= PING_TIMEOUT; i += 1000)
-                    {
-                        Thread.Sleep(1000);
-                        client.Ping += 1;
-                    }
-                    if (client.Ping * 1000 >= PING_TIMEOUT)
-                        OnClientDisconnected(new ClientDisconnectedEventArgs(client));
+                    Thread.Sleep(PING_TIMEOUT);
                 }
             }
             catch (IOException)
