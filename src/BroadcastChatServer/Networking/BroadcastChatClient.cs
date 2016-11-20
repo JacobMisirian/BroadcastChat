@@ -83,6 +83,10 @@ namespace BroadcastChatServer.Networking
         {
             Send("QUIT {0} {1} {2}", channel, nick, message);
         }
+        public void SendUserList(string channel, string list)
+        {
+            Send("LIST {0} {1}", channel, list);
+        }
 
         public void SendError(string msg, params object[] args)
         {
@@ -103,6 +107,10 @@ namespace BroadcastChatServer.Networking
         public void SendErrorNickExists(string nick)
         {
             SendError("Nick already exists {0}", nick);
+        }
+        public void SendErrorNickNotSet()
+        {
+            SendError("Nick not set! Use NICK <nick> to set");
         }
         public void SendErrorNoChannel(string channel)
         {

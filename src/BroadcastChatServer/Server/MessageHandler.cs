@@ -18,6 +18,13 @@ namespace BroadcastChatServer.Server
         {
             string[] parts = msg.Split(' ');
 
+            // We can't have clients doing anything until we know who they are.
+            if (client.Nick == null && parts[0] != "NICK")
+            {
+                client.SendErrorNickNotSet();
+                return;
+            }
+
             switch (parts[0].ToUpper())
             {
                 case "CHANMSG":
@@ -37,6 +44,12 @@ namespace BroadcastChatServer.Server
                         client.SendErrorArgLength(parts[0].ToUpper(), 3, parts.Length);
                     else
                         handleLeave(client, parts[1], sliceArray(parts, 2, parts.Length, " "));
+                    break;
+                case "LIST":
+                    if (parts.Length < 2)
+                        client.SendErrorArgLength(parts[0].ToUpper(), 2, parts.Length);
+                    else
+                        handleList(client, parts[1]);
                     break;
                 case "NICK":
                     if (parts.Length < 2)
@@ -88,7 +101,25 @@ namespace BroadcastChatServer.Server
                 client.SendErrorNotInChannel(channel);
             else if (!server.Channels.ContainsKey(channel))
                 client.SendErrorNoChannel(channel);
-            server.Channels[channel].SendLeave(client.Nick, reason);
+            else
+            {
+                server.Channels[channel].SendLeave(client.Nick, reason);
+                client.Channels.Remove(channel);
+            }
+        }
+        private void handleList(BroadcastChatClient client, string channel)
+        {
+            if (!server.Channels.ContainsKey(channel))
+                client.SendErrorNoChannel(channel);
+            else if (!client.Channels.ContainsKey(channel))
+                client.SendErrorNotInChannel(channel);
+            else
+            {
+                StringBuilder sb = new StringBuilder();
+                foreach (string cl in server.Channels[channel].Clients.Keys)
+                    sb.AppendFormat("{0} ", cl);
+                client.SendUserList(channel, sb.ToString());
+            }
         }
         private void handleNick(BroadcastChatClient client, string newNick)
         {
