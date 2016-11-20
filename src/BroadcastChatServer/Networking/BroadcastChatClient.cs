@@ -53,16 +53,33 @@ namespace BroadcastChatServer.Networking
             TcpClient.Close();
         }
 
+        public string Read()
+        {
+            return StreamReader.ReadLine();
+        }
+
         public void Send(string msg, params object[] args)
         {
             StreamWriter.WriteLine(string.Format(msg, args));
             StreamWriter.Flush();
         }
-
+        
+        public void SendChanList(string channels)
+        {
+            Send("CHANLIST {0}", channels);
+        }
         public void SendChanMsg(string channel, string sender, string message)
         {
             Send("CHANMSG {0} {1} {2}", channel, sender, message);
-        }       
+        }
+        public void SendChanOperGive(string channel, string giver, string receiver)
+        {
+            Send("CHANOPER {0} GIVE {1} {2}", channel, receiver, giver);
+        }
+        public void SendChanOperTake(string channel, string taker, string receiver)
+        {
+            Send("CHANOPER {0} TAKE {1} {2}", channel, receiver, taker);
+        }
         public void SendJoin(string channel, string nick)
         {
             Send("JOIN {0} {1}", channel, nick);
@@ -79,13 +96,17 @@ namespace BroadcastChatServer.Networking
         {
             Send("PRIVMSG {0} {1}", sender, message);
         }
+        public void SendTopic(string channel, string setterNick, string topic)
+        {
+            Send("TOPIC {0} {1} {2}", channel, setterNick, topic);
+        }
         public void SendQuit(string channel, string nick, string message)
         {
             Send("QUIT {0} {1} {2}", channel, nick, message);
         }
         public void SendUserList(string channel, string list)
         {
-            Send("LIST {0} {1}", channel, list);
+            Send("USERLIST {0} {1}", channel, list);
         }
 
         public void SendError(string msg, params object[] args)
@@ -99,6 +120,10 @@ namespace BroadcastChatServer.Networking
         public void SendErrorChannelName(string channel)
         {
             SendError("Channel names must start with #, got {0}", channel);
+        }
+        public void SendErrorExpected(string given, string expected1, string expected2)
+        {
+            SendError("Expected {0} or {1}, given {1}", expected1, expected2, given);
         }
         public void SendErrorInChannel(string channel)
         {
@@ -120,6 +145,10 @@ namespace BroadcastChatServer.Networking
         {
             SendError("No such nick {0}", nick);
         }
+        public void SendErrorNotChanOper(string channel)
+        {
+            SendError("Not oper in channel {0}", channel);
+        }
         public void SendErrorNotInChannel(string channel)
         {
             SendError("Not in channel {0}", channel);
@@ -127,11 +156,6 @@ namespace BroadcastChatServer.Networking
         public void SendErrorChannelExists(string channel)
         {
             SendError("Channel already exists {0}", channel);
-        }
-
-        public string Read()
-        {
-            return StreamReader.ReadLine();
         }
     }
 }

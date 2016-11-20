@@ -27,15 +27,24 @@ namespace BroadcastChatServer.Server
 
             switch (parts[0].ToUpper())
             {
+                case "CHANLIST":
+                    handleChanList(client);
+                    break;
                 case "CHANMSG":
                     if (parts.Length < 3)
                         client.SendErrorArgLength(parts[0].ToUpper(), 3, parts.Length);
                     else
                         handleChanMsg(client, parts[1], sliceArray(parts, 2, parts.Length, " "));
                     break;
+                case "CHANOPER":
+                    if (parts.Length < 4)
+                        client.SendErrorArgLength(parts[0].ToUpper(), 4, parts.Length);
+                    else
+                        handleChanOper(client, parts[1], parts[2], parts[3]);
+                    break;
                 case "JOIN":
                     if (parts.Length < 2)
-                        client.SendErrorArgLength(parts[0].ToLower(), 2, parts.Length);
+                        client.SendErrorArgLength(parts[0].ToUpper(), 2, parts.Length);
                     else
                         handleJoin(client, parts[1]);
                     break;
@@ -44,12 +53,6 @@ namespace BroadcastChatServer.Server
                         client.SendErrorArgLength(parts[0].ToUpper(), 3, parts.Length);
                     else
                         handleLeave(client, parts[1], sliceArray(parts, 2, parts.Length, " "));
-                    break;
-                case "LIST":
-                    if (parts.Length < 2)
-                        client.SendErrorArgLength(parts[0].ToUpper(), 2, parts.Length);
-                    else
-                        handleList(client, parts[1]);
                     break;
                 case "NICK":
                     if (parts.Length < 2)
@@ -69,9 +72,30 @@ namespace BroadcastChatServer.Server
                     else
                         handleQuit(client, sliceArray(parts, 1, parts.Length, " "));
                     break;
+                case "TOPIC":
+                    if (parts.Length < 3)
+                        client.SendErrorArgLength(parts[0].ToUpper(), 3, parts.Length);
+                    else
+                        handleTopic(client, parts[1], sliceArray(parts, 2, parts.Length, " "));
+                    break;
+                case "USERLIST":
+                    if (parts.Length < 2)
+                        client.SendErrorArgLength(parts[0].ToUpper(), 2, parts.Length);
+                    else
+                        handleUserList(client, parts[1]);
+                    break;
             }
         }
 
+        private void handleChanList(BroadcastChatClient client)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            foreach (string chan in server.Channels.Keys)
+                sb.AppendFormat("{0} ", chan);
+
+            client.SendChanList(sb.ToString());
+        }
         private void handleChanMsg(BroadcastChatClient client, string channel, string message)
         {
             if (!server.Channels.ContainsKey(channel))
@@ -80,6 +104,21 @@ namespace BroadcastChatServer.Server
                 client.SendErrorNotInChannel(channel);
             else
                 server.Channels[channel].SendChanMsg(client.Nick, message);
+        }
+        public void handleChanOper(BroadcastChatClient client, string channel, string mod, string target)
+        {
+            if (!server.Channels.ContainsKey(channel))
+                client.SendErrorNoChannel(channel);
+            else if (!server.Channels[channel].Clients.ContainsKey(client.Nick))
+                client.SendErrorNotInChannel(channel);
+            else if (!server.Channels[channel].OperClients.ContainsKey(client.Nick))
+                client.SendErrorNotChanOper(channel);
+            else if (mod.ToUpper() == "GIVE")
+                server.Channels[channel].SendChanOperGive(client, target);
+            else if (mod.ToUpper() == "TAKE")
+                server.Channels[channel].SendChanOperTake(client, target);
+            else
+                client.SendErrorExpected(mod.ToUpper(), "GIVE", "TAKE");
         }
         public void handleJoin(BroadcastChatClient client, string channel)
         {
@@ -92,7 +131,11 @@ namespace BroadcastChatServer.Server
                 if (server.Channels[channel].Clients.ContainsKey(client.Nick))
                     client.SendErrorInChannel(channel);
                 else
-                    server.Channels[channel].SendJoin(client);
+                {
+                    var chan = server.Channels[channel];
+                    chan.SendJoin(client);
+                    client.SendTopic(chan.Name, chan.TopicSetter, chan.Topic);
+                }
             }
         }
         private void handleLeave(BroadcastChatClient client, string channel, string reason)
@@ -105,20 +148,6 @@ namespace BroadcastChatServer.Server
             {
                 server.Channels[channel].SendLeave(client.Nick, reason);
                 client.Channels.Remove(channel);
-            }
-        }
-        private void handleList(BroadcastChatClient client, string channel)
-        {
-            if (!server.Channels.ContainsKey(channel))
-                client.SendErrorNoChannel(channel);
-            else if (!client.Channels.ContainsKey(channel))
-                client.SendErrorNotInChannel(channel);
-            else
-            {
-                StringBuilder sb = new StringBuilder();
-                foreach (string cl in server.Channels[channel].Clients.Keys)
-                    sb.AppendFormat("{0} ", cl);
-                client.SendUserList(channel, sb.ToString());
             }
         }
         private void handleNick(BroadcastChatClient client, string newNick)
@@ -138,6 +167,31 @@ namespace BroadcastChatServer.Server
         private void handleQuit(BroadcastChatClient client, string reason)
         {
             client.Quit(reason);
+        }
+        private void handleTopic(BroadcastChatClient client, string channel, string newTopic)
+        {
+            if (!server.Channels.ContainsKey(channel))
+                client.SendErrorNoChannel(channel);
+            else if (!server.Channels[channel].Clients.ContainsKey(client.Nick))
+                client.SendErrorNotInChannel(channel);
+            else if (!server.Channels[channel].OperClients.ContainsKey(client.Nick))
+                client.SendErrorNotChanOper(channel);
+            else
+                server.Channels[channel].SendTopic(client, newTopic);
+        }
+        private void handleUserList(BroadcastChatClient client, string channel)
+        {
+            if (!server.Channels.ContainsKey(channel))
+                client.SendErrorNoChannel(channel);
+            else if (!client.Channels.ContainsKey(channel))
+                client.SendErrorNotInChannel(channel);
+            else
+            {
+                StringBuilder sb = new StringBuilder();
+                foreach (string cl in server.Channels[channel].Clients.Keys)
+                    sb.AppendFormat(server.Channels[channel].OperClients.ContainsKey(cl) ? "@{0} " : "{0} ", cl);
+                client.SendUserList(channel, sb.ToString());
+            }
         }
 
         private string sliceArray(string[] arr, int start, int end, string sep = "")
