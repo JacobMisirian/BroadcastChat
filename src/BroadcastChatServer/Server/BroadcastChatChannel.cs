@@ -49,6 +49,15 @@ namespace BroadcastChatServer.Server
             foreach (var client in Clients.Values)
                 client.SendJoin(Name, cl.Nick);
         }
+        public void SendKick(string kicker, BroadcastChatClient kicked)
+        {
+            foreach (var client in Clients.Values)
+                client.SendKick(Name, kicked.Nick, kicker);
+            Clients.Remove(kicked.Nick);
+            if (OperClients.ContainsKey(kicked.Nick))
+                OperClients.Remove(kicked.Nick);
+            kicked.Channels.Remove(Name);
+        }
         public void SendLeave(string nick, string reason)
         {
             foreach (var client in Clients.Values)

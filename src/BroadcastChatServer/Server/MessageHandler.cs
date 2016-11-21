@@ -48,6 +48,12 @@ namespace BroadcastChatServer.Server
                     else
                         handleJoin(client, parts[1]);
                     break;
+                case "KICK":
+                    if (parts.Length < 3)
+                        client.SendErrorArgLength(parts[0].ToUpper(), 3, parts.Length);
+                    else
+                        handleKick(client, parts[1], parts[2]);
+                    break;
                 case "LEAVE":
                     if (parts.Length < 3)
                         client.SendErrorArgLength(parts[0].ToUpper(), 3, parts.Length);
@@ -90,7 +96,7 @@ namespace BroadcastChatServer.Server
         private void handleChanList(BroadcastChatClient client)
         {
             StringBuilder sb = new StringBuilder();
-
+    
             foreach (string chan in server.Channels.Keys)
                 sb.AppendFormat("{0} ", chan);
 
@@ -105,7 +111,7 @@ namespace BroadcastChatServer.Server
             else
                 server.Channels[channel].SendChanMsg(client.Nick, message);
         }
-        public void handleChanOper(BroadcastChatClient client, string channel, string mod, string target)
+        private void handleChanOper(BroadcastChatClient client, string channel, string mod, string target)
         {
             if (!server.Channels.ContainsKey(channel))
                 client.SendErrorNoChannel(channel);
@@ -130,7 +136,7 @@ namespace BroadcastChatServer.Server
             else
                 client.SendErrorExpected(mod.ToUpper(), "GIVE", "TAKE");
         }
-        public void handleJoin(BroadcastChatClient client, string channel)
+        private void handleJoin(BroadcastChatClient client, string channel)
         {
             if (!channel.StartsWith("#"))
                 client.SendErrorChannelName(channel);
@@ -147,6 +153,19 @@ namespace BroadcastChatServer.Server
                     client.SendTopic(chan.Name, chan.TopicSetter, chan.Topic);
                 }
             }
+        }
+        private void handleKick(BroadcastChatClient client, string channel, string kicked)
+        {
+            if (!server.Channels.ContainsKey(channel))
+                client.SendErrorNoChannel(channel);
+            else if (!server.Clients.ContainsKey(kicked))
+                client.SendErrorNoNick(kicked);
+            else if (!server.Channels[channel].Clients.ContainsKey(kicked))
+                client.SendErrorUserNotInChannel(channel, kicked);
+            else if (!server.Channels[channel].OperClients.ContainsKey(client.Nick))
+                client.SendErrorNotChanOper(channel, client.Nick);
+            else
+                server.Channels[channel].SendKick(client.Nick, server.Clients[kicked]);
         }
         private void handleLeave(BroadcastChatClient client, string channel, string reason)
         {

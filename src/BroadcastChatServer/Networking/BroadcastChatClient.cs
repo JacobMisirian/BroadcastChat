@@ -84,6 +84,10 @@ namespace BroadcastChatServer.Networking
         {
             Send("JOIN {0} {1}", channel, nick);
         }
+        public void SendKick(string channel, string kicked, string kicker)
+        {
+            Send("KICK {0} {1} {2}", channel, kicked, kicker);
+        }
         public void SendLeave(string channel, string nick, string reason)
         {
             Send("LEAVE {0} {1} {2}", channel, nick, reason);
@@ -121,6 +125,10 @@ namespace BroadcastChatServer.Networking
         {
             SendError("Command {0} expects {1} argument(s), given: {2}", baseCmd, expected, given);
         }
+        public void SendErrorChannelExists(string channel)
+        {
+            SendError("Channel already exists {0}", channel);
+        }
         public void SendErrorChannelName(string channel)
         {
             SendError("Channel names must start with #, got {0}", channel);
@@ -157,9 +165,9 @@ namespace BroadcastChatServer.Networking
         {
             SendError("Not in channel {0}", channel);
         }
-        public void SendErrorChannelExists(string channel)
+        public void SendErrorUserNotInChannel(string channel, string nick)
         {
-            SendError("Channel already exists {0}", channel);
+            SendError("User {0} is not in channel {1}", nick, channel);
         }
     }
 }
