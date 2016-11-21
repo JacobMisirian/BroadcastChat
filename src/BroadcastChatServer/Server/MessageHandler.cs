@@ -16,6 +16,10 @@ namespace BroadcastChatServer.Server
 
         public void HandleMessage(BroadcastChatClient client, string msg)
         {
+            // If we get a blank message, do nothing.
+            if (msg.Trim() == string.Empty || msg == null)
+                return;
+
             string[] parts = msg.Split(' ');
 
             // We can't have clients doing anything until we know who they are.
@@ -27,6 +31,18 @@ namespace BroadcastChatServer.Server
 
             switch (parts[0].ToUpper())
             {
+                case "BAN":
+                    if (parts.Length < 3)
+                        client.SendErrorArgLength(parts[0].ToUpper(), 3, parts.Length);
+                    else
+                        handleBan(client, parts[1], parts[2]);
+                    break;
+                case "BANLIST":
+                    if (parts.Length < 2)
+                        client.SendErrorArgLength(parts[0].ToUpper(), 2, parts.Length);
+                    else
+                        handleBanList(client, parts[1]);
+                    break;
                 case "CHANLIST":
                     handleChanList(client);
                     break;
@@ -84,15 +100,54 @@ namespace BroadcastChatServer.Server
                     else
                         handleTopic(client, parts[1], sliceArray(parts, 2, parts.Length, " "));
                     break;
+                case "UNBAN":
+                    if (parts.Length < 3)
+                        client.SendErrorArgLength(parts[0].ToUpper(), 3, parts.Length);
+                    else
+                        handleUnban(client, parts[1], parts[2]);
+                    break;
                 case "USERLIST":
                     if (parts.Length < 2)
                         client.SendErrorArgLength(parts[0].ToUpper(), 2, parts.Length);
                     else
                         handleUserList(client, parts[1]);
                     break;
+                // If the first word in the message is not a command, send an error message.
+                default:
+                    client.SendErrorNotACommand(parts[0].ToUpper());
+                    break;
             }
         }
 
+        private void handleBan(BroadcastChatClient client, string channel, string target)
+        {
+            if (!server.Channels.ContainsKey(channel))
+                client.SendErrorNoChannel(channel);
+            else if (!server.Channels[channel].Clients.ContainsKey(client.Nick))
+                client.SendErrorNotInChannel(channel);
+            else if (!server.Channels[channel].Clients.ContainsKey(target))
+                client.SendErrorUserNotInChannel(channel, target);
+            else if (!server.Channels[channel].OperClients.ContainsKey(client.Nick))
+                client.SendErrorNotChanOper(channel, client.Nick);
+            else if (server.Channels[channel].BannedClients.ContainsKey(target))
+                client.SendErrorUserAlreadyBanned(channel, target);
+            else
+                server.Channels[channel].SendBan(client.Nick, server.Clients[target]);
+        }
+        private void handleBanList(BroadcastChatClient client, string channel)
+        {
+            if (!server.Channels.ContainsKey(channel))
+                client.SendErrorNoChannel(channel);
+            else if (!server.Channels[channel].Clients.ContainsKey(client.Nick))
+                client.SendErrorNotInChannel(channel);
+            else
+            {
+                StringBuilder sb = new StringBuilder();
+                foreach (string nick in server.Channels[channel].BannedClients.Keys)
+                    sb.AppendFormat("{0} ", nick);
+                client.SendBanList(channel, sb.ToString());
+            }
+        }
         private void handleChanList(BroadcastChatClient client)
         {
             StringBuilder sb = new StringBuilder();
@@ -108,6 +163,8 @@ namespace BroadcastChatServer.Server
                 client.SendErrorNoChannel(channel);
             else if (!client.Channels.ContainsKey(channel))
                 client.SendErrorNotInChannel(channel);
+            else if (server.Channels[channel].BannedClients.ContainsKey(client.Nick))
+                client.SendErrorBanned(channel);
             else
                 server.Channels[channel].SendChanMsg(client.Nick, message);
         }
@@ -146,11 +203,14 @@ namespace BroadcastChatServer.Server
                     server.Channels.Add(channel, new BroadcastChatChannel(channel));
                 if (server.Channels[channel].Clients.ContainsKey(client.Nick))
                     client.SendErrorInChannel(channel);
+                else if (server.Channels[channel].BannedClients.ContainsKey(client.Nick))
+                    client.SendErrorBanned(channel);
                 else
                 {
                     var chan = server.Channels[channel];
                     chan.SendJoin(client);
                     client.SendTopic(chan.Name, chan.TopicSetter, chan.Topic);
+                    handleUserList(client, channel);
                 }
             }
         }
@@ -217,6 +277,21 @@ namespace BroadcastChatServer.Server
                 client.SendErrorNotChanOper(channel, client.Nick);
             else
                 server.Channels[channel].SendTopic(client, newTopic);
+        }
+        private void handleUnban(BroadcastChatClient client, string channel, string target)
+        {
+            if (!server.Channels.ContainsKey(channel))
+                client.SendErrorNoChannel(channel);
+            else if (!server.Channels[channel].Clients.ContainsKey(client.Nick))
+                client.SendErrorNotInChannel(channel);
+            else if (!server.Channels[channel].Clients.ContainsKey(target))
+                client.SendErrorUserNotInChannel(channel, target);
+            else if (!server.Channels[channel].OperClients.ContainsKey(client.Nick))
+                client.SendErrorNotChanOper(channel, target);
+            else if (!server.Channels[channel].BannedClients.ContainsKey(target))
+                client.SendErrorUserAlreadyBanned(channel, target);
+            else
+                server.Channels[channel].SendUnban(client.Nick, target);
         }
         private void handleUserList(BroadcastChatClient client, string channel)
         {

@@ -8,6 +8,7 @@ namespace BroadcastChatServer.Server
     public class BroadcastChatChannel
     {
         public Dictionary<string, BroadcastChatClient> Clients { get; private set; }
+        public Dictionary<string, BroadcastChatClient> BannedClients { get; private set; }
         public Dictionary<string, BroadcastChatClient> OperClients { get; private set; }
 
         public string Name { get; private set; }
@@ -17,12 +18,19 @@ namespace BroadcastChatServer.Server
         public BroadcastChatChannel(string name)
         {
             Clients = new Dictionary<string, BroadcastChatClient>();
+            BannedClients = new Dictionary<string, BroadcastChatClient>();
             OperClients = new Dictionary<string, BroadcastChatClient>();
             Name = name;
             Topic = string.Empty;
             TopicSetter = string.Empty;
         }
 
+        public void SendBan(string banner, BroadcastChatClient banned)
+        {
+            foreach (var client in Clients.Values)
+                client.SendBan(Name, banner, banned.Nick);
+            BannedClients.Add(banned.Nick, banned);
+        }
         public void SendChanMsg(string sender, string message)
         {
             foreach (var client in Clients.Values)
@@ -79,15 +87,15 @@ namespace BroadcastChatServer.Server
                 OperClients.Add(newNick, temp);
             }
 
+            if (BannedClients.ContainsKey(oldNick))
+            {
+                temp = BannedClients[oldNick];
+                BannedClients.Remove(oldNick);
+                BannedClients.Add(newNick, temp);
+            }
+
             foreach (var client in Clients.Values)
                 client.SendNickChange(Name, oldNick, newNick);
-        }
-        public void SendTopic(BroadcastChatClient cl, string newTopic)
-        {
-            foreach (var client in Clients.Values)
-                client.SendTopic(Name, cl.Nick, newTopic);
-            Topic = newTopic;
-            TopicSetter = cl.Nick;
         }
         public void SendQuit(BroadcastChatClient cl, string reason)
         {
@@ -96,6 +104,19 @@ namespace BroadcastChatServer.Server
                 OperClients.Remove(cl.Nick);
             foreach (var client in Clients.Values)
                 client.SendQuit(Name, cl.Nick, reason);
+        }
+        public void SendTopic(BroadcastChatClient cl, string newTopic)
+        {
+            foreach (var client in Clients.Values)
+                client.SendTopic(Name, cl.Nick, newTopic);
+            Topic = newTopic;
+            TopicSetter = cl.Nick;
+        }
+        public void SendUnban(string unbanner, string unbanned)
+        {
+            foreach (var client in Clients.Values)
+                client.SendUnban(Name, unbanner, unbanned);
+            BannedClients.Remove(unbanned);
         }
     }
 }

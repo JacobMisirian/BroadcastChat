@@ -64,6 +64,14 @@ namespace BroadcastChatServer.Networking
             StreamWriter.Flush();
         }
         
+        public void SendBan(string channel, string banner, string banned)
+        {
+            Send("BAN {0} {1} {2}", channel, banned, banner);
+        }
+        public void SendBanList(string channel, string list)
+        {
+            Send("BANLIST {0} {1}", channel, list);
+        }
         public void SendChanList(string channels)
         {
             Send("CHANLIST {0}", channels);
@@ -108,6 +116,10 @@ namespace BroadcastChatServer.Networking
         {
             Send("QUIT {0} {1} {2}", channel, nick, message);
         }
+        public void SendUnban(string channel, string unbanner, string unbanned)
+        {
+            Send("UNBAN {0} {1} {2}", channel, unbanned, unbanner);
+        }
         public void SendUserList(string channel, string list)
         {
             Send("USERLIST {0} {1}", channel, list);
@@ -124,6 +136,10 @@ namespace BroadcastChatServer.Networking
         public void SendErrorArgLength(string baseCmd, int expected, int given)
         {
             SendError("Command {0} expects {1} argument(s), given: {2}", baseCmd, expected, given);
+        }
+        public void SendErrorBanned(string channel)
+        {
+            SendError("Cannot send to channel {0}, banned", channel);
         }
         public void SendErrorChannelExists(string channel)
         {
@@ -157,6 +173,10 @@ namespace BroadcastChatServer.Networking
         {
             SendError("No such nick {0}", nick);
         }
+        public void SendErrorNotACommand(string baseCmd)
+        {
+            SendError("Not a command {0}", baseCmd);
+        }
         public void SendErrorNotChanOper(string channel, string user)
         {
             SendError("User {0} is not chan oper in channel {1}", user, channel);
@@ -164,6 +184,14 @@ namespace BroadcastChatServer.Networking
         public void SendErrorNotInChannel(string channel)
         {
             SendError("Not in channel {0}", channel);
+        }
+        public void SendErrorUserAlreadyBanned(string channel, string nick)
+        {
+            SendError("User {0} is already banned in {1}", nick, channel);
+        }
+        public void SendErrorUserNotBanned(string channel, string nick)
+        {
+            SendError("User {0} is not banned in {1}", nick, channel);
         }
         public void SendErrorUserNotInChannel(string channel, string nick)
         {
