@@ -29,6 +29,8 @@ namespace BroadcastChatServer.Server
                 return;
             }
 
+            client.TimeOfLastMessage = client.Watch.Elapsed;
+
             switch (parts[0].ToUpper())
             {
                 case "BAN":
@@ -111,6 +113,12 @@ namespace BroadcastChatServer.Server
                         client.SendErrorArgLength(parts[0].ToUpper(), 2, parts.Length);
                     else
                         handleUserList(client, parts[1]);
+                    break;
+                case "WHOIS":
+                    if (parts.Length < 2)
+                        client.SendErrorArgLength(parts[0].ToUpper(), 2, parts.Length);
+                    else
+                        handleWhois(client, parts[1]);
                     break;
                 // If the first word in the message is not a command, send an error message.
                 default:
@@ -306,6 +314,13 @@ namespace BroadcastChatServer.Server
                     sb.AppendFormat(server.Channels[channel].OperClients.ContainsKey(cl) ? "@{0} " : "{0} ", cl);
                 client.SendUserList(channel, sb.ToString());
             }
+        }
+        private void handleWhois(BroadcastChatClient client, string nick)
+        {
+            if (!server.Clients.ContainsKey(nick))
+                client.SendErrorNoNick(nick);
+            else
+                client.SendWhois(server.Clients[nick]);
         }
 
         private string sliceArray(string[] arr, int start, int end, string sep = "")

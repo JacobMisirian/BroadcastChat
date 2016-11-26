@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 
 using BroadcastChatServer.Server;
@@ -23,6 +25,10 @@ namespace BroadcastChatServer.Networking
 
         public Dictionary<string, BroadcastChatChannel> Channels { get; private set; }
 
+        public Stopwatch Watch { get; private set; }
+        public DateTime TimeConnected { get; private set; }
+        public TimeSpan TimeOfLastMessage { get; set; }
+
         public string Nick { get; private set; }
 
         public BroadcastChatClient(TcpClient client)
@@ -35,6 +41,11 @@ namespace BroadcastChatServer.Networking
             Ping = 0;
 
             Channels = new Dictionary<string, BroadcastChatChannel>();
+
+            Watch = new Stopwatch();
+            Watch.Start();
+            TimeConnected = DateTime.Now;
+            TimeOfLastMessage = Watch.Elapsed;
         }
 
         public void ChangeNick(string newNick)
@@ -123,6 +134,16 @@ namespace BroadcastChatServer.Networking
         public void SendUserList(string channel, string list)
         {
             Send("USERLIST {0} {1}", channel, list);
+        }
+        public void SendWhois(BroadcastChatClient client)
+        {
+            StringBuilder sb = new StringBuilder("WHOIS ");
+            sb.AppendFormat("{0} ", client.Nick);
+            sb.AppendFormat("Connected: {0} ", TimeConnected.ToString().Replace(" ", string.Empty));
+            sb.AppendFormat("IDLE: {0} ", client.Watch.ElapsedMilliseconds - client.TimeOfLastMessage.Milliseconds);
+            sb.AppendFormat("IP: {0} ", ((IPEndPoint)client.TcpClient.Client.RemoteEndPoint).Address.ToString());
+            sb.AppendFormat("PING: {0}", client.Ping);
+            Send(sb.ToString());
         }
 
         public void SendError(string msg, params object[] args)
