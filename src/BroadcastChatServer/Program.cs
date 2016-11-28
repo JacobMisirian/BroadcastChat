@@ -1,5 +1,6 @@
 using System;
 
+using BroadcastChatServer.Config;
 using BroadcastChatServer.Server;
 
 namespace BroadcastChatServer
@@ -8,7 +9,7 @@ namespace BroadcastChatServer
     {
         public static void Main(string[] args)
         {
-            new BroadcastChatServer.Server.BroadcastChatServer().Start(1337);
+            BroadcastChatServer.Server.BroadcastChatServer.CreateFromConfig(BroadcastChatServerConfigParser.Parse(args[0])).Start();
         }
     }
 }

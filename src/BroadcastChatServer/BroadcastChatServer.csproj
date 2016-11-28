@@ -44,11 +44,14 @@
     <Compile Include="Server\MessageHandler.cs" />
     <Compile Include="Server\BroadcastChatChannel.cs" />
     <Compile Include="Networking\BroadcastChatClient.cs" />
+    <Compile Include="Config\BroadcastChatServerConfig.cs" />
+    <Compile Include="Config\BroadcastChatServerConfigParser.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Folder Include="Networking\" />
     <Folder Include="Events\" />
     <Folder Include="Server\" />
+    <Folder Include="Config\" />
   </ItemGroup>
 </Project>

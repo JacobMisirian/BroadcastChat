@@ -20,6 +20,8 @@ namespace BroadcastChatServer.Networking
 
         public int Ping { get; set; }
 
+        public bool Sending { get; private set; }
+
         public Thread ListenThread { get; set; }
         public Thread PingThread { get; set; }
 
@@ -39,6 +41,8 @@ namespace BroadcastChatServer.Networking
             StreamWriter = new StreamWriter(client.GetStream());
 
             Ping = 0;
+
+            Sending = false;
 
             Channels = new Dictionary<string, BroadcastChatChannel>();
 
@@ -71,8 +75,13 @@ namespace BroadcastChatServer.Networking
 
         public void Send(string msg, params object[] args)
         {
+            while (Sending)
+                ;
+            Sending = true;
             StreamWriter.WriteLine(string.Format(msg, args));
             StreamWriter.Flush();
+            Thread.Sleep(100);
+            Sending = false;
         }
         
         public void SendBan(string channel, string banner, string banned)
@@ -111,6 +120,14 @@ namespace BroadcastChatServer.Networking
         {
             Send("LEAVE {0} {1} {2}", channel, nick, reason);
         }
+        public void SendMotd(string motd)
+        {
+            Send("MOTD {0}", motd);
+        }
+        public void SendName(string name)
+        {
+            Send("NAME {0}", name);
+        }
         public void SendNickChange(string channel, string oldNick, string newNick)
         {
             Send("NICK {0} {1} {2}", channel, oldNick, newNick);
@@ -119,13 +136,13 @@ namespace BroadcastChatServer.Networking
         {
             Send("PRIVMSG {0} {1}", sender, message);
         }
-        public void SendTopic(string channel, string setterNick, string topic)
-        {
-            Send("TOPIC {0} {1} {2}", channel, setterNick, topic);
-        }
         public void SendQuit(string channel, string nick, string message)
         {
             Send("QUIT {0} {1} {2}", channel, nick, message);
+        }
+        public void SendTopic(string channel, string setterNick, string topic)
+        {
+            Send("TOPIC {0} {1} {2}", channel, setterNick, topic);
         }
         public void SendUnban(string channel, string unbanner, string unbanned)
         {

@@ -36,6 +36,36 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="BroadcastChatLib\BroadcastChatClient.cs" />
+    <Compile Include="BroadcastChatLib\Events\ConnectedToServerEventArgs.cs" />
+    <Compile Include="BroadcastChatLib\Events\NameMessageReceivedEventArgs.cs" />
+    <Compile Include="BroadcastChatLib\Events\MotdMessageReceivedEventArgs.cs" />
+    <Compile Include="BroadcastChatLib\Events\MessageReceivedEventArgs.cs">
+      <DependentUpon>NameMessageReceivedEventArgs.cs</DependentUpon>
+    </Compile>
+    <Compile Include="BroadcastChatLib\Events\ChanMsgMessageReceivedEventArgs.cs" />
+    <Compile Include="BroadcastChatLib\Events\PrivMsgMessageReceivedEventArgs.cs" />
+    <Compile Include="BroadcastChatLib\Events\NickMessageReceivedEventArgs.cs" />
+    <Compile Include="BroadcastChatLib\Events\JoinMessageReceivedEventArgs.cs" />
+    <Compile Include="BroadcastChatLib\Events\TopicMessageReceivedEventArgs.cs" />
+    <Compile Include="BroadcastChatLib\Events\DisconnectedFromServerEventArgs.cs" />
+    <Compile Include="BroadcastChatLib\Events\LeaveMessageReceivedEventArgs.cs" />
+    <Compile Include="BroadcastChatLib\Events\QuitMessageReceivedEventArgs.cs" />
+    <Compile Include="BroadcastChatLib\Events\ChanListMessageReceivedEventargs.cs" />
+    <Compile Include="BroadcastChatLib\Events\ChanOperGiveMessageReceivedEventArgs.cs" />
+    <Compile Include="BroadcastChatLib\Events\ChanOperTakeMessageReceivedEventArgs.cs" />
+    <Compile Include="BroadcastChatLib\Events\KickMessageReceivedEventArgs.cs" />
+    <Compile Include="BroadcastChatLib\Events\UnbanMessageReceivedEventArgs.cs" />
+    <Compile Include="BroadcastChatLib\Events\WhoisMessageReceivedEventArgs.cs" />
+    <Compile Include="BroadcastChatLib\Events\ErrorMessageReceivedEventArgs.cs" />
+    <Compile Include="BroadcastChatLib\Events\BanListMessageReceivedEventArgs.cs" />
+    <Compile Include="BroadcastChatLib\Events\BanMessageReceivedEventArgs.cs" />
+    <Compile Include="TUIClient\ClientTUI.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Folder Include="BroadcastChatLib\" />
+    <Folder Include="BroadcastChatLib\Events\" />
+    <Folder Include="TUIClient\" />
+  </ItemGroup>
 </Project>
